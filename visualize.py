@@ -59,25 +59,35 @@ def plot_typical_samples(samples: dict, save_path: str):
 
 
 def plot_noisy_samples(dataset: EMNISTDataset, save_path: str, n: int = 8):
-    fig, axes = plt.subplots(n, 3, figsize=(9, 2.4 * n))
-
+    has_gaussian = dataset.add_gaussian
+    has_salt_pepper = dataset.add_salt_pepper
+    
+    if not has_gaussian and not has_salt_pepper:
+        return
+    cols = 2
+    fig, axes = plt.subplots(n, cols, figsize=(7, 2.5 * n))
+    
     for row in range(n):
         image, label = dataset[row]
         base = denormalize(image)
-        gaussian = add_gaussian_noise(base)
-        salt_pepper = add_salt_pepper_noise(base)
-
+        
+        # 第 1 列：原图
         axes[row, 0].imshow(base.squeeze(0), cmap='gray')
         axes[row, 0].set_title(f"Original ({label_to_char(label)})", fontsize=9)
         axes[row, 0].axis('off')
 
-        axes[row, 1].imshow(gaussian.squeeze(0), cmap='gray')
-        axes[row, 1].set_title('Gaussian Noise', fontsize=9)
+        # 第 2 列：噪声图（训练集中的图）
+        axes[row, 1].imshow(base.squeeze(0), cmap='gray')
+        
+        # 标题自动显示噪声类型
+        if has_gaussian and has_salt_pepper:
+            axes[row, 1].set_title("Gaussian + SaltPepper", fontsize=9)
+        elif has_gaussian:
+            axes[row, 1].set_title("Gaussian Noise", fontsize=9)
+        elif has_salt_pepper:
+            axes[row, 1].set_title("SaltPepper Noise", fontsize=9)
+            
         axes[row, 1].axis('off')
-
-        axes[row, 2].imshow(salt_pepper.squeeze(0), cmap='gray')
-        axes[row, 2].set_title('Salt & Pepper Noise', fontsize=9)
-        axes[row, 2].axis('off')
 
     fig.suptitle('Noisy Sample Visualization', fontsize=14)
     plt.tight_layout()
@@ -87,12 +97,19 @@ def plot_noisy_samples(dataset: EMNISTDataset, save_path: str, n: int = 8):
 
 def main(output_dir='outputs'):
     os.makedirs(output_dir, exist_ok=True)
+    from datetime import datetime
 
-    train_dataset = EMNISTDataset(train=True)
+    time_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    train_dataset = EMNISTDataset(
+        train=True,
+        augment=True,
+        add_gaussian=True,  
+        add_salt_pepper=False)
 
     typical_samples = collect_typical_samples(train_dataset)
-    typical_path = os.path.join(output_dir, 'typical_samples.png')
-    noisy_path = os.path.join(output_dir, 'noisy_samples.png')
+    typical_path = os.path.join(output_dir, f'typical_samples_{time_str}.png')
+    noisy_path = os.path.join(output_dir, f'noisy_samples_{time_str}.png')
 
     plot_typical_samples(typical_samples, typical_path)
     plot_noisy_samples(train_dataset, noisy_path)
