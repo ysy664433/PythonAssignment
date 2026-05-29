@@ -97,6 +97,9 @@ def plot_noisy_samples(dataset: EMNISTDataset, save_path: str, n: int = 8):
 
 def main(output_dir='outputs'):
     os.makedirs(output_dir, exist_ok=True)
+    from datetime import datetime
+
+    time_str = datetime.now().strftime('%Y%m%d_%H%M%S')
 
     train_dataset = EMNISTDataset(
         train=True,
@@ -105,8 +108,8 @@ def main(output_dir='outputs'):
         add_salt_pepper=False)
 
     typical_samples = collect_typical_samples(train_dataset)
-    typical_path = os.path.join(output_dir, 'typical_samples.png')
-    noisy_path = os.path.join(output_dir, 'noisy_samples.png')
+    typical_path = os.path.join(output_dir, f'typical_samples_{time_str}.png')
+    noisy_path = os.path.join(output_dir, f'noisy_samples_{time_str}.png')
 
     plot_typical_samples(typical_samples, typical_path)
     plot_noisy_samples(train_dataset, noisy_path)

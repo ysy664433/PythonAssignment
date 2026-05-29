@@ -62,10 +62,11 @@ def train_model(epochs=30, lr=0.001, device='cpu', save_path='checkpoints/simple
     #保存每一次Loss
     from datetime import datetime
     time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    save_path = f"checkpoints/loss_curve_{time_str}.png"
+    os.makedirs("outputs", exist_ok=True)
+    loss_curve_path = os.path.join("outputs", f"loss_curve_{time_str}.png")
 
-    plt.savefig(save_path, dpi=200, bbox_inches="tight")
+    plt.savefig(loss_curve_path, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"Loss 曲线已保存为：{save_path}")
+    print(f"Loss 曲线已保存为：{loss_curve_path}")
 
     return model, test_loader
