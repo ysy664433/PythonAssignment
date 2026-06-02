@@ -1,0 +1,3 @@
+run_name,augment,add_gaussian,add_salt_pepper,accuracy,model_path
+run_name,augment,add_gaussian,add_salt_pepper,accuracy,model_path
+test_and_train_augment_gaussian_saltpepper,True,True,True,93.49038461538461,checkpoints\simplecnn_test_and_train_augment_gaussian_saltpepper.pt
