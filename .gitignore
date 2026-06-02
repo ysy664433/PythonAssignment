@@ -1,1 +1,6 @@
 /simple
+__pycache__/
+.venv/
+.vscode/
+checkpoints/
+data/
