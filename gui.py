@@ -11,7 +11,7 @@ from data_loader import label_to_char
 
 
 CANVAS_SIZE = 280
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "checkpoints", "simplecnn_emnist.pt")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "checkpoints", "simplecnn_augment_only.pt")
 
 
 class LetterRecognizerApp:
@@ -154,7 +154,7 @@ class LetterRecognizerApp:
         top_index = int(top_indices[0].item())
         top_letter = label_to_char(top_index)
         top_confidence = float(top_probabilities[0].item()) * 100
-
+        
         candidates = []
         for prob, idx in zip(top_probabilities, top_indices):
             candidates.append(f"{label_to_char(int(idx.item()))}: {float(prob.item()) * 100:.1f}%")
