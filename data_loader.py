@@ -1,9 +1,9 @@
 ﻿import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, random_split
 
 LETTER_LABELS = [chr(ord('A') + i) for i in range(26)]
-
 
 def _fix_emnist_orientation(image):
     image = torch.rot90(image, k=-1, dims=(1, 2))
@@ -31,7 +31,10 @@ class AddSaltPepperNoise:
         return noisy
 
 class EMNISTDataset(Dataset):
-    def __init__(self, split='letters', train=True, augment=False,add_gaussian=False, add_salt_pepper=False):
+    def __init__(self, split='letters', train=True, augment=False,add_gaussian= False, add_salt_pepper=False):
+        self.augment = augment
+        self.add_gaussian = add_gaussian
+        self.add_salt_pepper = add_salt_pepper
         transform_list = []
         if train and augment:
             transform_list.append(
@@ -76,10 +79,52 @@ def label_to_char(label: int) -> str:
         raise ValueError(f"Label out of range: {label}")
     return LETTER_LABELS[label]
 
-def get_dataloader(batch_size=64):
-    train_dataset = EMNISTDataset(train=True, augment=True, add_gaussian=False, add_salt_pepper=False)
-    test_dataset = EMNISTDataset(train=False, augment=False)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    return train_loader, test_loader
+def get_dataloader(
+    batch_size=64,
+    augment=False,
+    add_gaussian=False,
+    add_salt_pepper=False,
+    val_ratio=0.15,
+    test_gaussian=False,
+    test_salt_pepper=False,
+    num_workers=0,
+    pin_memory=False 
+):
+    full_train_dataset = EMNISTDataset(
+        train=True,
+        augment=augment,
+        add_gaussian=add_gaussian,
+        add_salt_pepper=add_salt_pepper
+    )
+
+    # 验证集保持干净
+    val_full = EMNISTDataset(train=True, augment=False, add_gaussian=False, add_salt_pepper=False)
+    
+    total_size = len(full_train_dataset)
+    val_size = int(total_size * val_ratio)
+    train_size = total_size - val_size
+
+    indices = torch.randperm(total_size, generator=torch.Generator().manual_seed(42))
+    train_dataset = torch.utils.data.Subset(full_train_dataset, indices[:train_size])
+    val_dataset   = torch.utils.data.Subset(val_full, indices[train_size:])
+
+    # 测试集可以灵活选择噪声类型
+    test_dataset = EMNISTDataset(
+        train=False,
+        augment=False,
+        add_gaussian=test_gaussian,
+        add_salt_pepper=test_salt_pepper
+    )
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+                              num_workers=num_workers, pin_memory=pin_memory,
+                              persistent_workers=(num_workers > 0))
+    val_loader   = DataLoader(val_dataset, batch_size=batch_size, shuffle=False,
+                              num_workers=num_workers, pin_memory=pin_memory,
+                              persistent_workers=(num_workers > 0))
+    test_loader  = DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
+                              num_workers=num_workers, pin_memory=pin_memory,
+                              persistent_workers=(num_workers > 0))
+
+    return train_loader, val_loader, test_loader
